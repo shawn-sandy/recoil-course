@@ -9,7 +9,6 @@ import {
     NumberInputField,
     Switch,
 } from '@chakra-ui/react'
-import { log } from 'console'
 import {ArrowRight} from 'react-feather'
 import {atom, selector, useRecoilState, useRecoilValue} from 'recoil'
 
@@ -22,15 +21,26 @@ const usdAtom = atom(
     }
 )
 
+
 const euroSelector = selector<number>({
     key: 'eur',
     get: ({get}) => {
-        const usd = get(usdAtom)
+        let usd = get(usdAtom)
+        const commissionEnabled = get(commissionEnabledAtom)
+        if(commissionEnabled) {
+            const commission = get(commissionAtom)
+            usd = removeCommission(usd, commission)
+        }
         return usd * exchangeRate
     },
-    set: ({set}, newEuroValue) => {
+    set: ({set, get}, newEuroValue) => {
         // @ts-ignore
-        const newUsdValue = newEuroValue / exchangeRate
+        let newUsdValue = newEuroValue / exchangeRate     
+        const commissionEnabled = get(commissionEnabledAtom)
+        if(commissionEnabled) {
+            const commission = get(commissionAtom)
+            newUsdValue = addCommission(newUsdValue, commission)
+        }
         set(usdAtom, newUsdValue)
     }
 })
